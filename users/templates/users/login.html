@@ -23,5 +23,11 @@
                 You need an account?<a class="ml-2" href={% url 'Register' %}> Sign up now</a>
             </small>
         </div>
+        {% load socialaccount %}
+        <div class="border-top pt-3">
+            <small class="text-muted">
+                Sign in With Googel!<a class="ml-2" href="{% provider_login_url 'google' %}"> Sign in</a>
+            </small>
+        </div>
     </div>
 {% endblock content %}
