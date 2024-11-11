@@ -1,0 +1,26 @@
+{% extends "blog/base.html" %}
+{% load crispy_forms_tags %}
+
+{% block content %}
+<div class="content-section">
+  <h2>Enable Two-Factor Authentication</h2>
+  <p>Scan the QR code below with your authenticator app, then enter the TOTP code twice to confirm enabling 2FA.</p>
+
+  {% if qr_code_image %}
+    <img src="data:image/png;base64,{{ qr_code_image }}" alt="2FA QR Code">
+  {% endif %}
+
+  <form method="post">
+    {% csrf_token %}
+    <div class="form-group">
+      <label for="code1">Enter TOTP Code</label>
+      <input type="text" name="code1" class="form-control" required>
+    </div>
+    <div class="form-group">
+      <label for="code2">Re-enter TOTP Code</label>
+      <input type="text" name="code2" class="form-control" required>
+    </div>
+    <button type="submit" class="btn btn-primary">Confirm 2FA</button>
+  </form>
+</div>
+{% endblock content %}

@@ -60,7 +60,6 @@ def verify_2fa(request):
 def profile(request):
     u_form = UserUpdateForm(request.POST or None, instance=request.user)
     p_form = ProfileUpdateForm(request.POST or None, request.FILES or None, instance=request.user.profile)
-    
     profile_instance = request.user.profile
 
     # Generate QR code if 2FA is enabled
@@ -68,22 +67,21 @@ def profile(request):
     if profile_instance.mfa_enabled and profile_instance.mfa_secret:
         totp = pyotp.TOTP(profile_instance.mfa_secret)
         qr_code_url = totp.provisioning_uri(name=request.user.username, issuer_name="YourAppName")
-
-        # Generate QR Code image as base64
+        
+        # Generate QR code image as base64
         qr = qrcode.make(qr_code_url)
         buffered = BytesIO()
         qr.save(buffered, format="PNG")
         qr_code_image = base64.b64encode(buffered.getvalue()).decode()
 
     if request.method == 'POST':
-        # Check if 2FA enable/disable button was clicked
+        # 2FA Enable/Disable Actions
         if 'enable_2fa' in request.POST and not profile_instance.mfa_enabled:
-            profile_instance.mfa_enabled = True
-            profile_instance.mfa_secret = pyotp.random_base32()  # Generate new secret for 2FA
+            profile_instance.mfa_secret = pyotp.random_base32()  # Set a new 2FA secret
             profile_instance.save()
-            messages.success(request, "2FA enabled! Use the QR code to set it up.")
-            return redirect('Profile')
-
+            messages.info(request, "Please enter the TOTP code from your authenticator app twice to confirm.")
+            return redirect('enable_2fa_confirm')  # Redirect to confirm page
+        
         elif 'disable_2fa' in request.POST and profile_instance.mfa_enabled:
             profile_instance.mfa_enabled = False
             profile_instance.mfa_secret = ''  # Clear MFA secret
@@ -91,20 +89,62 @@ def profile(request):
             messages.success(request, "2FA has been disabled.")
             return redirect('Profile')
 
-        # Otherwise, handle profile update form submission
+        # Profile Update Actions
         elif u_form.is_valid() and p_form.is_valid():
             u_form.save()
             p_form.save()
             messages.success(request, "Profile updated successfully.")
             return redirect('Profile')
+        else:
+            messages.error(request, "Please correct the errors below.")
 
     context = {
         'u_form': u_form,
         'p_form': p_form,
-        'qr_code_image': qr_code_image,  # Pass the QR code URL to the template
+        'qr_code_image': qr_code_image,
         'mfa_enabled': profile_instance.mfa_enabled,
     }
     return render(request, 'users/profile.html', context)
+
+@login_required
+def enable_2fa_confirm(request):
+    profile_instance = request.user.profile
+
+    # Ensure a secret has been generated for this session
+    if not profile_instance.mfa_secret:
+        messages.error(request, "2FA setup failed. Please start the process again.")
+        return redirect('Profile')
+
+    # Generate QR code if it's not already generated
+    totp = pyotp.TOTP(profile_instance.mfa_secret)
+    qr_code_url = totp.provisioning_uri(name=request.user.username, issuer_name="Prince Django Blog")
+
+    # Generate QR Code image as base64 for display
+    qr = qrcode.make(qr_code_url)
+    buffered = BytesIO()
+    qr.save(buffered, format="PNG")
+    qr_code_image = base64.b64encode(buffered.getvalue()).decode()
+
+    if request.method == 'POST':
+        code1 = request.POST.get('code1')
+        code2 = request.POST.get('code2')
+
+        # Verify the codes
+        is_code1_valid = totp.verify(code1, valid_window=1)
+        is_code2_valid = totp.verify(code2, valid_window=1)
+
+        if is_code1_valid and is_code2_valid:
+            # Enable 2FA if both codes are valid
+            profile_instance.mfa_enabled = True
+            profile_instance.save()
+            messages.success(request, "2FA enabled successfully!")
+            return redirect('Profile')
+        else:
+            messages.error(request, "The codes were not valid. Please try again.")
+
+    return render(request, 'users/enable_2fa_confirm.html', {'qr_code_image': qr_code_image})
+
+
 
 class CustomLoginView(LoginView):
     template_name = 'users/login.html'  # Use the existing login template

@@ -30,6 +30,8 @@ urlpatterns = ([
  
     path('login/',user_views.CustomLoginView.as_view(template_name="users/login.html"),name='Login'),
     path('verify-2fa/', user_views.verify_2fa, name='verify_2fa'),  # 2FA verification
+    path('enable-2fa-confirm/', user_views.enable_2fa_confirm, name='enable_2fa_confirm'),
+
     
     path('logout/', auth_views.LogoutView.as_view(template_name = 'users/logout.html'), name='Logout'),
 
