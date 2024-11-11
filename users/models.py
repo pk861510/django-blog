@@ -8,7 +8,12 @@ from PIL import Image #resize Image
 class profile(models.Model):
     user = models.OneToOneField(User,on_delete = models.CASCADE)  #if delete user then also delete profile
     image = models.ImageField(default = 'default.jpg',upload_to = 'profile_pics')
-    custom_field = models.CharField(max_length=100)  # This is your custom field
+    about = models.CharField(max_length=400, null=True, blank=True)  # This is your custom field
+
+    mfa_secret = models.CharField(max_length=32, blank=True, null=True)
+    # Optional field to check if MFA is enabled
+    mfa_enabled = models.BooleanField(default=False)
+    
     def __str__(self):
         return f'{self.user.username} Profile'
     # Because now we use AWS S3 for our storages
