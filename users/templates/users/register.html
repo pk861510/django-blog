@@ -2,67 +2,30 @@
 {% load crispy_forms_tags %}
 
 {% block content %}
-<div class="content-section">
-  <div class="media">
-    <img class="rounded-circle account-img" src="{{ user.profile.image.url }}">
-    <div class="media-body">
-      <h2 class="account-heading">{{ user.username }}</h2>
-      <p class="text-secondary">{{ user.email }}</p>
-      <p class="text-secondary">{{ user.custom_field }}</p>
+    <div class = "content-section">
+        <form method="POST">
+            {% csrf_token %}
+            <fieldset class="form-group">
+                <legend class="border-bottom mb-4 "> Join today</legend>
+<!--                {{form.as_p}} # no need because now we use crispy-->
+                {{ form|crispy }}  <!-- crispy filter use for our forms -->
+            </fieldset>
+            <div class="form-group">
+            <button class="btn btn-outline-info" type="submit">Sign up</button>
+        </div>
+        </form>
+        {% load socialaccount %}
+        <div class="border-top pt-3">
+            <small class="text-muted">
+                Sign in With Googel!<a class="ml-2" href="{% provider_login_url 'google' %}"> Sign in</a>
+            </small>
+        </div>
+        
+        <div class="border-top pt-3">
+            <small class="text-muted">
+                Already have an account?<a class="ml-2" href="#"> Sign in</a>
+            </small>
+        </div>
+
     </div>
-  </div>
-  
-  {% if mfa_enabled %}
-    <p>2FA is currently enabled for your account.</p>
-    <form method="post">
-      {% csrf_token %}
-      <button type="submit" name="disable_2fa" class="btn btn-warning">Disable 2FA</button>
-    </form>
-
-    <!-- Toggle button to show/hide QR code -->
-    <button type="button" id="toggle-qr" class="btn btn-info mt-2">Show QR Code</button>
-
-    <!-- QR Code Image (initially hidden) -->
-    <div id="qr-code-container" style="display: none;">
-      {% if qr_code_image %}
-        <img src="data:image/png;base64,{{ qr_code_image }}" alt="2FA QR Code" class="mt-3">
-      {% endif %}
-    </div>
-
-  {% else %}
-    <p>2FA is currently disabled for your account.</p>
-    <form method="post">
-      {% csrf_token %}
-      <button type="submit" name="enable_2fa" class="btn btn-primary">Enable 2FA</button>
-    </form>
-  {% endif %}
-
-  <!-- Profile update form -->
-  <form method="POST" enctype="multipart/form-data">
-    {% csrf_token %}
-    <fieldset class="form-group">
-      <legend class="border-bottom mb-4 ">Profile Info</legend>
-      {{ u_form|crispy }}
-      {{ p_form|crispy }}
-    </fieldset>
-    <div class="form-group">
-      <button class="btn btn-outline-info" type="submit">Update</button>
-    </div>
-  </form>
-</div>
-
-<script>
-  // JavaScript to toggle QR code visibility
-  document.getElementById('toggle-qr').addEventListener('click', function() {
-    var qrCodeContainer = document.getElementById('qr-code-container');
-    var buttonText = qrCodeContainer.style.display === 'none' ? 'Hide QR Code' : 'Show QR Code';
-    
-    // Toggle the QR code container visibility
-    qrCodeContainer.style.display = qrCodeContainer.style.display === 'none' ? 'block' : 'none';
-    
-    // Change the button text
-    this.textContent = buttonText;
-  });
-</script>
-
 {% endblock content %}
